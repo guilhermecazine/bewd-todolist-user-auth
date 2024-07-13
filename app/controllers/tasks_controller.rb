@@ -1,64 +1,22 @@
+# app/controllers/tasks_controller.rb
 class TasksController < ApplicationController
   def index
-    @tasks = Task.all
-    render 'tasks/index' # can be omitted
-  end
-
-  def index_by_current_user
-    token = cookies.signed[:todolist_session_token]
-    session = Session.find_by(token: token)
-
-    if session
-      @tasks = session.user.tasks
-      render 'tasks/index' # can be omitted
-    else
-      render json: { tasks: [] }
-    end
+    @tasks = current_user.tasks
+    render json: @tasks
   end
 
   def create
-    token = cookies.signed[:todolist_session_token]
-    session = Session.find_by(token: token)
-
-    if session
-      user = session.user
-      @task = user.tasks.new(task_params)
-
-      if @task.save
-        render 'tasks/create' # can be omitted
-      else
-        render json: { success: false }
-      end
+    @task = current_user.tasks.new(task_params)
+    if @task.save
+      render json: @task
     else
       render json: { success: false }
     end
-  end
-
-  def destroy
-    @task = Task.find_by(id: params[:id])
-
-    if @task&.destroy
-      render json: { success: true }
-    else
-      render json: { success: false }
-    end
-  end
-
-  def mark_complete
-    @task = Task.find_by(id: params[:id])
-
-    render 'tasks/update' if @task&.update(completed: true)
-  end
-
-  def mark_active
-    @task = Task.find_by(id: params[:id])
-
-    render 'tasks/update' if @task&.update(completed: false)
   end
 
   private
 
   def task_params
-    params.require(:task).permit(:content)
+    params.require(:task).permit(:title, :description, :due_date)
   end
 end
