@@ -8,8 +8,7 @@ class SessionsController < ApplicationController
         httponly: true
       }
       render json: {
-        success: true,
-        username: @user.username
+        success: true
       }
     else
       render json: {
