@@ -1,30 +1,27 @@
+# config/routes.rb
 Rails.application.routes.draw do
-  get 'sessions/users'
-
   root 'homepage#index'
 
-  # Add routes below this line
-
-  # TASKS
-  get    '/tasks'                    => 'tasks#index'
-  post   '/tasks'                    => 'tasks#create'
-  delete '/tasks/:id'                => 'tasks#destroy'
-  put    '/tasks/:id/mark_complete'  => 'tasks#mark_complete'
-  put    '/tasks/:id/mark_active'    => 'tasks#mark_active'
-  get    '/my_tasks'                 => 'tasks#index_by_current_user'
+  resources :tasks, only: [:index, :create, :destroy] do
+    collection do
+      get :index_by_current_user
+    end
+    member do
+      put :mark_complete
+      put :mark_active
+    end
+  end
 
   # USERS
-  post   '/users'                    => 'users#create'
-  post '/login'                      => 'sessions#create'
-  delete '/logout'                   => 'sessions#destroy'
+  post '/users' => 'users#create'
+  post '/login' => 'sessions#create'
+  delete '/logout' => 'sessions#destroy'
 
   # SESSIONS
-  post   '/sessions'                 => 'sessions#create'
-  get    '/authenticated'            => 'sessions#authenticated'
-  delete '/sessions'                 => 'sessions#destroy'
+  post '/sessions' => 'sessions#create'
+  get '/authenticated' => 'sessions#authenticated'
+  delete '/sessions' => 'sessions#destroy'
 
-  # Add routes below above line
-
-  # Redirect all other paths to index page, which will be taken over by AngularJS
+  # Redirect all other paths to index page
   get '*path' => 'homepage#index'
 end
