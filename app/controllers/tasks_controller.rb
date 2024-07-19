@@ -1,6 +1,13 @@
 # app/controllers/tasks_controller.rb
 class TasksController < ApplicationController
   def index
+    token = cookies.signed[:todolist_session_token]
+    session = Session.find_by(token: token)
+
+    return render json: { success: false } if session.nil?
+
+    current_user = session.user
+
     @tasks = current_user.tasks
     render json: @tasks
   end

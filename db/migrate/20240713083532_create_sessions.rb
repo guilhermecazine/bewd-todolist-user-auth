@@ -1,12 +1,9 @@
-# db/migrate/20240713083532_create_sessions.rb
-
 class CreateSessions < ActiveRecord::Migration[6.1]
   def change
-    create_table :sessions unless table_exists?(:sessions) do |t|
-      # Your table columns definition
-      t.string :session_id, null: false
-      t.text :data
-      t.timestamps null: false
+    create_table :sessions do |t|
+      t.string :token
+      t.references :user, foreign_key: true
+      t.timestamps
     end
   end
 end

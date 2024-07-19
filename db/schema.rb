@@ -10,11 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2024_07_13_083532) do
+ActiveRecord::Schema.define(version: 2024_07_14_044455) do
 
   create_table "sessions", force: :cascade do |t|
-    t.integer "user_id", null: false
     t.string "token"
+    t.integer "user_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
@@ -23,13 +25,18 @@ ActiveRecord::Schema.define(version: 2024_07_13_083532) do
     t.datetime "updated_at", null: false
     t.string "content"
     t.boolean "completed", default: false
+    t.integer "user_id"
+    t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
     t.string "username"
     t.string "email"
-    t.string "password_digest"
+    t.string "password"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   add_foreign_key "sessions", "users"
+  add_foreign_key "tasks", "users"
 end

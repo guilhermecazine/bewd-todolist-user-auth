@@ -1,11 +1,9 @@
-# db/migrate/20240713083345_create_users.rb
-
 class CreateUsers < ActiveRecord::Migration[6.1]
   def change
-    create_table :users unless table_exists?(:users) do |t|
-      # Your table columns definition
-      t.string :name
+    create_table :users do |t|
+      t.string :username
       t.string :email
+      t.string :password
       t.timestamps
     end
   end
