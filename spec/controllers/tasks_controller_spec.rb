@@ -1,81 +1,141 @@
-# spec/controllers/tasks_controller_spec.rb
 require 'rails_helper'
 
 RSpec.describe TasksController, type: :controller do
-  let(:user) { create(:user) }
-  let(:task) { create(:task, user: user) }
+  render_views
 
-  before do
-    # Mocking the current_user method
-    allow(controller).to receive(:current_user).and_return(user)
-  end
-
-  describe 'GET #index' do
+  describe 'GET /tasks' do
     it 'renders all tasks in JSON' do
-      create_list(:task, 2, user: user)
+      user = FactoryBot.create(:user)
+      task1 = user.tasks.create(content: 'Task #1')
+      task2 = user.tasks.create(content: 'Task #2')
+
       get :index
-      expect(response).to have_http_status(:success)
-      tasks = JSON.parse(response.body)['tasks']
-      expect(tasks.size).to eq(2)
-      expect(tasks.first).to have_key('id')
-      expect(tasks.first).to have_key('content')
-      expect(tasks.first).to have_key('completed')
-      expect(tasks.first).to have_key('created_at')
-      expect(tasks.first).to have_key('updated_at')
+
+      expected_response = {
+        tasks: [
+          {
+            id: task1.id,
+            content: task1.content,
+            completed: task1.completed,
+            created_at: task1.created_at
+          }, {
+            id: task2.id,
+            content: task2.content,
+            completed: task2.completed,
+            created_at: task2.created_at
+          }
+        ]
+      }
+
+      expect(response.body).to eq(expected_response.to_json)
     end
   end
 
-  describe 'GET #index_by_current_user' do
+  describe 'GET /my_tasks' do
     it 'renders all tasks of current user in JSON' do
-      create_list(:task, 2, user: user)
+      user = FactoryBot.create(:user)
+      session = user.sessions.create
+      @request.cookie_jar.signed['todolist_session_token'] = session.token
+      task = user.tasks.create(content: 'Task #1')
+
+      other_user = FactoryBot.create(:user, username: 'other username')
+      other_user.tasks.create(content: 'Task #2')
+
       get :index_by_current_user
-      expect(response).to have_http_status(:success)
-      tasks = JSON.parse(response.body)['tasks']
-      expect(tasks.size).to eq(2)
-      expect(tasks.first).to have_key('id')
-      expect(tasks.first).to have_key('content')
-      expect(tasks.first).to have_key('completed')
-      expect(tasks.first).to have_key('created_at')
-      expect(tasks.first).to have_key('updated_at')
+
+      expected_response = {
+        tasks: [
+          {
+            id: task.id,
+            content: task.content,
+            completed: task.completed,
+            created_at: task.created_at
+          }
+        ]
+      }
+
+      expect(response.body).to eq(expected_response.to_json)
     end
   end
 
-  describe 'POST #create' do
+  describe 'POST /tasks' do
     it 'renders newly created task in JSON' do
-      post :create, params: { task: { content: 'New Task', completed: false } }
-      expect(response).to have_http_status(:created)
-      task_response = JSON.parse(response.body)['task']
-      expect(task_response).to have_key('id')
-      expect(task_response['content']).to eq('New Task')
-      expect(task_response['completed']).to be(false)
+      user = FactoryBot.create(:user)
+      session = user.sessions.create
+      @request.cookie_jar.signed['todolist_session_token'] = session.token
+
+      post :create, params: {
+        task: {
+          content: 'New Task'
+        }
+      }
+
+      expect(Task.count).to eq(1)
+
+      expect(response.body).to eq({
+        task: {
+          id: Task.first.id,
+          content: 'New Task',
+          completed: false,
+          created_at: Task.first.created_at
+        }
+      }.to_json)
     end
   end
 
-  describe 'DELETE #destroy' do
+  describe 'DELETE /tasks/:id' do
     it 'renders success status' do
+      user = FactoryBot.create(:user)
+      task = user.tasks.create(content: 'Task Example')
+
       delete :destroy, params: { id: task.id }
-      expect(response).to have_http_status(:success)
-      expect(JSON.parse(response.body)).to eq('success' => true)
+
       expect(Task.count).to eq(0)
+      expect(response.body).to eq({ success: true }.to_json)
     end
   end
 
-  describe 'PUT #mark_complete' do
+  describe 'PUT /tasks/:id/mark_complete' do
     it 'renders modified task' do
+      user = FactoryBot.create(:user)
+      task = user.tasks.create(content: 'Task Example')
+
       put :mark_complete, params: { id: task.id }
-      expect(response).to have_http_status(:success)
-      task_response = JSON.parse(response.body)['task']
-      expect(task_response['completed']).to be(true)
+
+      expect(Task.where(completed: true).count).to eq(1)
+
+      task.reload
+      expect(response.body).to eq({
+        task: {
+          id: task.id,
+          content: task.content,
+          completed: true,
+          created_at: task.created_at,
+          updated_at: task.updated_at
+        }
+      }.to_json)
     end
   end
 
-  describe 'PUT #mark_active' do
+  describe 'PUT /tasks/:id/mark_active' do
     it 'renders modified task' do
-      task.update(completed: true)
+      user = FactoryBot.create(:user)
+      task = user.tasks.create(content: 'Task Example', completed: true)
+
       put :mark_active, params: { id: task.id }
-      expect(response).to have_http_status(:success)
-      task_response = JSON.parse(response.body)['task']
-      expect(task_response['completed']).to be(false)
+
+      expect(Task.where(completed: false).count).to eq(1)
+
+      task.reload
+      expect(response.body).to eq({
+        task: {
+          id: task.id,
+          content: task.content,
+          completed: false,
+          created_at: task.created_at,
+          updated_at: task.updated_at
+        }
+      }.to_json)
     end
   end
 end
